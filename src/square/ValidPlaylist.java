@@ -22,4 +22,8 @@ public class ValidPlaylist {
   boolean validPlaylist(List<Song> playlist) {
     return true;
   }
+
+  public static void main(String[] args) {
+    System.out.println("Valid playlist");
+  }
 }
