@@ -1,10 +1,7 @@
 package dropbox;
 
-import sun.security.provider.MD5;
-
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -129,13 +126,19 @@ public class FindDuplicate {
 
   }
 
-  // Follow up: If the directory only contains a few duplicate files, we still need to search through the whole directory.
-  // MD5 is slow if each file is very large. How can we optimize the above solution?
-  // Optimize: use the metadata of the file to first hashing the files and then use MD5 to hash the files.
+  /**
+   *  Follow up: If the directory only contains a few duplicate files, we still need to search through
+   *  the whole directory.
+   *  MD5 is slow if each file is very large. How can we optimize the above solution?
+   *
+   *  Optimize: use the metadata of the file to first hashing the files and then use MD5 to hash the files.
+   */
   public List<List<String>> findDuplicateUpdate(String[] paths) {
     List<List<String>> result = new ArrayList<>();
-    Map<Long, List<String>> sizeMap = getFilesBySize(paths); // Key: fiel size; Value: list of file path
-    Map<String, List<String>> hashMap = new HashMap<>(); // Key: hash value; Value: list of file path
+    // Key: fiel size; Value: list of file path
+    Map<Long, List<String>> sizeMap = getFilesBySize(paths);
+    // Key: hash value; Value: list of file path
+    Map<String, List<String>> hashMap = new HashMap<>();
 
     for (List<String> filePahs : sizeMap.values()) {
       if (filePahs.size() < 2) {
@@ -171,7 +174,8 @@ public class FindDuplicate {
     return sizeMap;
   }
 
-  // Further optimization: we do not calculate MD5 value of the whole file. Instead we divide the file into blocks of 1kb.
+  // Further optimization: we do not calculate MD5 value of the whole file. Instead we divide the
+  // file into blocks of 1kb.
   // First hash the file with MD5 of the first 1kb and then hash by the second 1kb.....and so on.
   public void readOneKb(String path) throws IOException {
     File file = new File(path);
