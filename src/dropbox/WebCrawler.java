@@ -48,7 +48,7 @@ public class WebCrawler {
     public List<String> crawl(String url) {
         submitNewUrl(url);
         try {
-            while (checkCrawlerResult()) ;
+            while (checkCrawlerResult()) {}
         } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
