@@ -8,8 +8,7 @@ import java.util.concurrent.*;
  */
 public class WebCrawler {
     public List<String> getUrls(String urlStr) {
-        // provided API to use
-        return new ArrayList<>();
+        return connectedUrls.getOrDefault(urlStr, new ArrayList<>());
     }
 
     public List<String> crawlBfs(String url) {
@@ -56,6 +55,30 @@ public class WebCrawler {
         return new ArrayList<>(result);
     }
 
+    private void submitNewUrl(String url) {
+        if (!result.contains(url)) {
+            result.add(url);
+            // crate a new callable crawler and execute to get the result list
+            Crawler crawler = new Crawler(url);
+            Future<List<String>> future = executor.submit(crawler);
+            futures.add(future);
+        }
+    }
+
+    class Crawler implements Callable<List<String>> {
+        private final String url;
+
+        Crawler(String url) {
+            this.url = url;
+        }
+
+        @Override
+        public List<String> call() {
+            List<String> urls = getUrls(url);
+            return urls;
+        }
+    }
+
     private boolean checkCrawlerResult() throws InterruptedException {
         Thread.sleep(PAUSE_TIME);
         Iterator<Future<List<String>>> iterator = futures.iterator();
@@ -77,34 +100,6 @@ public class WebCrawler {
         }
 
         return futures.size() > 0;
-    }
-
-    private void submitNewUrl(String url) {
-        if (!result.contains(url)) {
-            result.add(url);
-            // crate a new callable crawler and execute to get the result list
-            Crawler crawler = new Crawler(url);
-            Future<List<String>> future = executor.submit(crawler);
-            futures.add(future);
-        }
-    }
-
-    class Crawler implements Callable<List<String>> {
-        private final String url;
-
-        Crawler(String url) {
-            this.url = url;
-        }
-
-        @Override
-        public List<String> call() {
-            List<String> urls = getUrlsUpdated(url);
-            return urls;
-        }
-    }
-
-    private List<String> getUrlsUpdated(String url) {
-        return connectedUrls.getOrDefault(url, new ArrayList<>());
     }
 
     public static void main(String[] args) {

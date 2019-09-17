@@ -29,7 +29,7 @@ public class TokenBuckets {
         lock.lock();
         try {
             while (bucket.size() == CAPACITY) {
-                System.out.println("Bucket if full now.");
+                System.out.println("Bucket is full now.");
                 notFull.await();
             }
             long now = System.currentTimeMillis();
@@ -70,7 +70,7 @@ public class TokenBuckets {
     }
 
     public static void main(String[] args) {
-        TokenBuckets tb = new TokenBuckets(100, 8);
+        TokenBuckets tb = new TokenBuckets(20, 8);
         Runnable producer = () -> {
             while(true) {
                 try {
@@ -87,7 +87,7 @@ public class TokenBuckets {
               try {
                   List<Integer> result = tb.get((int) (Math.random() * 6) + 1);
                   System.out.println("consumer thread: " + Thread.currentThread().getName() + " get tokens: " + result.toString());
-                  Thread.sleep(3000);
+                  Thread.sleep(1000);
               } catch (InterruptedException ie) {
                   ie.printStackTrace();
               }
@@ -95,6 +95,7 @@ public class TokenBuckets {
         };
 
         new Thread(producer).start();
+        new Thread(consumer).start();
         new Thread(consumer).start();
         new Thread(consumer).start();
     }

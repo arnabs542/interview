@@ -9,8 +9,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 class DelayQueue<E extends Delayed> {
+  private final static int CAPACITY = 5;
   private final transient ReentrantLock lock = new ReentrantLock();
-  private final PriorityQueue<E> q = new PriorityQueue<>();
+  private final PriorityQueue<E> q = new PriorityQueue<>(CAPACITY);
 
   /**
    * Thread designated to wait for the element at the head of
@@ -50,21 +51,24 @@ class DelayQueue<E extends Delayed> {
   public boolean put(E e) {
     final ReentrantLock lock = this.lock;
     lock.lock();
-    try {
-      q.offer(e);
-      /**
-       * if e is the top, means the queue is empty, need to wake up all consumer threads.
-       * Set the leader to null since consumer thread will compete for the leader and one
-       * of them will become the new leader.
-       */
-      if (q.peek() == e) {
-        leader = null;
-        available.signal();
+    if (q.size() < CAPACITY) {
+      try {
+        q.offer(e);
+        /**
+         * if e is the top, means the queue is empty, need to wake up all consumer threads.
+         * Set the leader to null since consumer thread will compete for the leader and one
+         * of them will become the new leader.
+         */
+        if (q.peek() == e) {
+          leader = null;
+          available.signal();
+        }
+        return true;
+      } finally {
+        lock.unlock();
       }
-      return true;
-    } finally {
-      lock.unlock();
     }
+    return false;
   }
 
   /**
@@ -121,10 +125,20 @@ class DelayQueue<E extends Delayed> {
       }
     } finally {
       if (leader == null && q.peek() != null) {
+        // current thread has finished and the queue is not empty
+        // let other thread race for the leader.
         available.signal();
       }
       lock.unlock();
     }
+  }
+
+  public boolean isEmpty() {
+    return q.isEmpty();
+  }
+
+  public int getSize() {
+    return q.size();
   }
 }
 
@@ -174,9 +188,9 @@ class TaskProduce implements Runnable {
       try {
         int delay = random.nextInt(10000);
         Task task = new Task(UUID.randomUUID().toString(), delay);
-        System.out.println("Thread: " + Thread.currentThread().getName() + " Put task: " + task);
         q.put(task);
-        Thread.sleep(3000);
+        System.out.println("Thread: " + Thread.currentThread().getName() + " Put task: " + task);
+        Thread.sleep(5000);
       } catch (InterruptedException ie) {
         ie.printStackTrace();
       }
@@ -205,6 +219,7 @@ class TaskConsumer implements Runnable {
 }
 
 public class TaskScheduler {
+
   public static void main(String[] args) {
     DelayQueue<Task> queue = new DelayQueue<>();
     new Thread(new TaskProduce(queue), "Producer thread").start();
