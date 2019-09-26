@@ -10,21 +10,10 @@ public class AutoComplete {
     class TrieNode {
         Map<Character, TrieNode> childMap;
         Map<String, Integer> countMap;
-        boolean isWord;
 
         TrieNode() {
             childMap = new HashMap<>();
             countMap = new HashMap<>();
-            isWord = false;
-        }
-    }
-
-    class Pair {
-        String word;
-        int count;
-        Pair(String word, int count) {
-            this.word = word;
-            this.count = count;
         }
     }
 
@@ -50,7 +39,6 @@ public class AutoComplete {
             current = next;
             current.countMap.put(word, current.countMap.getOrDefault(word, 0) + count);
         }
-        current.isWord = true;
     }
 
     public List<String> input(char c) {
@@ -71,14 +59,13 @@ public class AutoComplete {
             current = next;
         }
 
-        PriorityQueue<Pair> pq = new PriorityQueue<>((a, b) -> (a.count == b.count) ? a.word.compareTo(b.word) : b.count - a.count);
-        for (String word : current.countMap.keySet()) {
-            pq.offer(new Pair(word, current.countMap.get(word)));
-        }
+        PriorityQueue<Map.Entry<String, Integer>> pq = new PriorityQueue<>((a, b) -> (a.getValue() == b.getValue()) ?
+                a.getKey().compareTo(b.getKey()) : b.getValue() - a.getValue());
+        pq.addAll(current.countMap.entrySet());
 
         List<String> result = new ArrayList<>();
         while (!pq.isEmpty()) {
-            result.add(pq.poll().word);
+            result.add(pq.poll().getKey());
         }
         return result;
     }

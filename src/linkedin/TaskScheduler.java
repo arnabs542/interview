@@ -87,7 +87,7 @@ class DelayQueue<E extends Delayed> {
         if (first == null) {
           available.await();
         } else {
-          long delay = first.getDelay(TimeUnit.NANOSECONDS);
+          long delay = first.getDelay(TimeUnit.MILLISECONDS);
           if (delay <= 0) {
             return q.poll();
           }

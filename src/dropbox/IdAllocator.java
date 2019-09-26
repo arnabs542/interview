@@ -20,6 +20,7 @@ public class IdAllocator {
   // we can do it using smaller space with bitset (O(space use in bitset * 2))
   // but allocate and release will be time O(log N)
   private BitSet bitSet;
+  private final int left;
 
   public IdAllocator(int maxId) {
     this.MAX_ID = maxId;
@@ -29,6 +30,7 @@ public class IdAllocator {
     }
     this.usedIdSet = new HashSet<>();
     this.bitSet = new BitSet(maxId * 2 - 1);
+    this.left = findLeft();
   }
 
   public int allocate() {
@@ -49,7 +51,15 @@ public class IdAllocator {
   }
 
   public boolean check(int id) {
-    return usedIdSet.contains(id);
+    return !usedIdSet.contains(id);
+  }
+
+  private int findLeft() {
+    int index = 1;
+    while (index < MAX_ID) {
+      index = 2 * index;
+    }
+    return index;
   }
 
   /**
@@ -57,27 +67,32 @@ public class IdAllocator {
    * bitset[0] is the root of the whole tree
    */
   public int allocateUpdate() {
-    int index = 0;
-    while (index < MAX_ID - 1) {
-      if (!bitSet.get(index * 2 + 1)) {
-        index = index * 2 + 1;
-      } else if (!bitSet.get(index * 2 + 2)) {
-        index = index * 2 + 2;
-      } else {
+    if (bitSet.get(1)) {
         return -1;
       }
+      int index = 1;
+      while (index < MAX_ID) {
+        if (!bitSet.get(index * 2)) {
+          index = index * 2;
+        } else if (!bitSet.get(index * 2 + 1)) {
+          index = index * 2 + 1;
+        }
+      }
+      bitSet.set(index);
+      updateTree(index);
+      if (index - left >= 0) {
+        return index - left;
+      } else {
+        return index - left + MAX_ID;
+      }
     }
-    bitSet.set(index);
-    updateTree(index);
-    return index - MAX_ID + 1;
-  }
 
-  private void updateTree(int index) {
-    while (index > 0) {
-      int parent = (index - 1) / 2;
-      if (index % 2 == 1) {
+    private void updateTree(int index) {
+      while (index > 0) {
+        int parent = index / 2;
+      if (index % 2 == 0) {
         // left child
-        if (bitSet.get(index) && bitSet.get(index +1)) {
+        if (bitSet.get(index) && bitSet.get(index + 1)) {
           bitSet.set(parent);
         } else {
           bitSet.clear(parent);
@@ -98,7 +113,7 @@ public class IdAllocator {
     if (id < 0 || id > MAX_ID) {
       return;
     }
-    int index = id + MAX_ID - 1;
+    int index = getIndex(id);
     if (bitSet.get(index)) {
       bitSet.clear(index);
       updateTree(index);
@@ -109,7 +124,16 @@ public class IdAllocator {
     if (id < 0 || id > MAX_ID) {
       return false;
     }
-    return bitSet.get(id + MAX_ID - 1);
+    int index = getIndex(id);
+    return !bitSet.get(index);
+  }
+
+  private int getIndex(int id) {
+    int index = id + left;
+    if (id + left >= 2 * MAX_ID) {
+      index = id + left - MAX_ID;
+    }
+    return index;
   }
 
   public static void main(String[] args) {
